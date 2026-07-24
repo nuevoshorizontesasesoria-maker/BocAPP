@@ -1,28 +1,31 @@
 import { createClient } from "@supabase/supabase-js";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+export function getSupabaseClient() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-// Cliente para frontend
-export const supabase = createClient(
-  supabaseUrl!,
-  supabaseAnonKey!
-);
-
-// Cliente administrador para API Routes
-export function getSupabaseAdmin() {
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-  if (!supabaseUrl) {
+  if (!url) {
     throw new Error("NEXT_PUBLIC_SUPABASE_URL no está configurada");
   }
 
-  if (!serviceRoleKey) {
+  if (!key) {
+    throw new Error("NEXT_PUBLIC_SUPABASE_ANON_KEY no está configurada");
+  }
+
+  return createClient(url, key);
+}
+
+export function getSupabaseAdmin() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!url) {
+    throw new Error("NEXT_PUBLIC_SUPABASE_URL no está configurada");
+  }
+
+  if (!key) {
     throw new Error("SUPABASE_SERVICE_ROLE_KEY no está configurada");
   }
 
-  return createClient(
-    supabaseUrl,
-    serviceRoleKey
-  );
+  return createClient(url, key);
 }
