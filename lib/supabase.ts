@@ -19,7 +19,6 @@ export const supabase = createClient(
 
 // Cliente administrador para API Routes
 export function getSupabaseAdmin() {
-
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!serviceRoleKey) {
