@@ -202,7 +202,7 @@ function MenuGrupoContenido() {
                   {esMio && (
                     <button 
                       onClick={() => eliminarMiPedido(order.id)}
-                      style={{ background: '#d32f2f', color: '#white', border: 'none', padding: '0.3rem 0.6rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem', color: '#fff' }}
+                      style={{ background: '#d32f2f', border: 'none', padding: '0.3rem 0.6rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem', color: '#fff' }}
                     >
                       Quitar
                     </button>
