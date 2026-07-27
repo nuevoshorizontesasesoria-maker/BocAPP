@@ -4,10 +4,10 @@ import { useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
-export default function ReservarPage() {
+export default function ReservarForm() {
   const [loading, setLoading] = useState(false)
   const router = useRouter()
-  
+
   // 1. Capturamos los parámetros de la URL
   const searchParams = useSearchParams()
   const restaurantId = searchParams.get('restaurant_id')
