@@ -11,7 +11,6 @@ function ConfirmacionContenido() {
   const [reserva, setReserva] = useState<any>(null);
   const [menuItems, setMenuItems] = useState<any[]>([]);
   
-  const [nombreComensal, setNombreComensal] = useState<string>('');
   const [bebidaSeleccionada, setBebidaSeleccionada] = useState<string>('');
   const [entradaSeleccionada, setEntradaSeleccionada] = useState<string>('');
   
@@ -56,12 +55,16 @@ function ConfirmacionContenido() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!nombreComensal.trim() || !bebidaSeleccionada || !entradaSeleccionada) {
-      alert('Por favor, ingresa tu nombre y selecciona una bebida y una entrada.');
+    if (!bebidaSeleccionada || !entradaSeleccionada) {
+      alert('Por favor, selecciona una bebida y una entrada.');
       return;
     }
 
+    // Tomamos automáticamente el nombre que figura en la reserva (organizer_name)
+    const nombreComensal = reserva?.organizer_name || 'Invitado';
+
     try {
+      // 1. Actualizamos el estado de la reserva a confirmado
       const { error: updateError } = await supabase
         .from('reservations')
         .update({ status: 'confirmed' })
@@ -69,6 +72,7 @@ function ConfirmacionContenido() {
 
       if (updateError) throw updateError;
 
+      // 2. Insertamos los platos en 'preorders' asociando explícitamente el 'guest_name' con el nombre del saludo
       const { error: preorderError } = await supabase
         .from('preorders')
         .insert([
@@ -112,7 +116,7 @@ function ConfirmacionContenido() {
       <main style={{ maxWidth: '450px', margin: '6rem auto', padding: '2.5rem', textAlign: 'center', fontFamily: 'sans-serif', background: '#fff', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}>
         <h2 style={{ color: '#2e7d32', marginBottom: '1rem' }}>¡Todo Listo!</h2>
         <p style={{ color: '#444', lineHeight: '1.6' }}>
-          Hemos confirmado tu asistencia, <strong>{nombreComensal}</strong>, y guardado tus elecciones de menú. ¡Te esperamos en <strong>{reserva?.restaurants?.name}</strong>!
+          Hemos confirmado tu asistencia, <strong>{reserva?.organizer_name}</strong>, y guardado tus elecciones de menú. ¡Te esperamos en <strong>{reserva?.restaurants?.name}</strong>!
         </p>
       </main>
     );
@@ -121,25 +125,13 @@ function ConfirmacionContenido() {
   return (
     <main style={{ maxWidth: '550px', margin: '3rem auto', padding: '2.5rem', fontFamily: 'sans-serif', background: '#fff', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}>
       <h2 style={{ marginBottom: '0.5rem', textAlign: 'center' }}>Confirma tu Asistencia</h2>
-      <p style={{ color: '#666', textAlign: 'center', marginBottom: '2rem', fontSize: '0.95rem' }}>
-        Estás respondiendo a la reserva a nombre de <strong>{reserva?.organizer_name}</strong> en <strong>{reserva?.restaurants?.name}</strong>.
+      
+      {/* Saludo con el nombre que viene de la reserva */}
+      <p style={{ color: '#666', textAlign: 'center', marginBottom: '2rem', fontSize: '1rem' }}>
+        Hola, <strong style={{ color: '#222' }}>{reserva?.organizer_name || 'Invitado'}</strong>. Elige tus opciones para la reserva en <strong>{reserva?.restaurants?.name}</strong>.
       </p>
 
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-        <div>
-          <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '0.5rem', color: '#333' }}>
-            Tu Nombre y Apellido:
-          </label>
-          <input
-            type="text"
-            value={nombreComensal}
-            onChange={(e) => setNombreComensal(e.target.value)}
-            required
-            placeholder="Ej: Juan Pérez"
-            style={{ width: '100%', padding: '0.75rem', borderRadius: '6px', border: '1px solid #ccc', fontSize: '1rem', boxSizing: 'border-box' }}
-          />
-        </div>
-
         <div>
           <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '0.5rem', color: '#333' }}>
             Elige tu Bebida:
