@@ -6,13 +6,17 @@ import { supabase } from '@/lib/supabase';
 
 function ConfirmacionContenido() {
   const searchParams = useSearchParams();
-  const id = searchParams.get('id');
+  const id = searchParams.get('id') || searchParams.get('token');
   
   const [reserva, setReserva] = useState<any>(null);
   const [menuItems, setMenuItems] = useState<any[]>([]);
+  
+  // Nuevos estados para capturar la selección y el nombre
+  const [nombreComensal, setNombreComensal] = useState<string>('');
   const [bebidaSeleccionada, setBebidaSeleccionada] = useState<string>('');
   const [entradaSeleccionada, setEntradaSeleccionada] = useState<string>('');
-  const [estado, setEstado] = useState<string>('cargando'); // cargando, pendiente_eleccion, confirmado
+  
+  const [estado, setEstado] = useState<string>('cargando'); // cargando, pendiente_eleccion, confirmado, error, exito
   const [mensajeError, setMensajeError] = useState<string>('');
 
   useEffect(() => {
@@ -34,7 +38,6 @@ function ConfirmacionContenido() {
         if (resError || !resData) throw new Error('No se encontró la reserva.');
         setReserva(resData);
 
-        // Si ya está confirmado, podemos mostrar un mensaje amigable o dejarle ver/editar su selección
         // 2. Obtener los ítems del menú del restaurante correspondiente
         const { data: menuData, error: menuError } = await supabase
           .from('menu_items')
@@ -56,13 +59,13 @@ function ConfirmacionContenido() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!bebidaSeleccionada || !entradaSeleccionada) {
-      alert('Por favor selecciona una bebida y una entrada.');
+    if (!nombreComensal.trim() || !bebidaSeleccionada || !entradaSeleccionada) {
+      alert('Por favor, ingresa tu nombre y selecciona una bebida y una entrada.');
       return;
     }
 
     try {
-      // 3. Actualizar estado de la reserva a 'confirmed'
+      // 3. Actualizar estado de la reserva a 'confirmed' (opcional, dependiendo de si un invitado confirma toda la reserva)
       const { error: updateError } = await supabase
         .from('reservations')
         .update({ status: 'confirmed' })
@@ -70,17 +73,21 @@ function ConfirmacionContenido() {
 
       if (updateError) throw updateError;
 
-      // 4. Guardar la preventa (preorder) en la base de datos
+      // 4. Guardar la preventa (preorder) en la base de datos, INCLUYENDO el guest_name y una cantidad por defecto
       const { error: preorderError } = await supabase
         .from('preorders')
         .insert([
           {
             reservation_id: id,
             menu_item_id: bebidaSeleccionada,
+            guest_name: nombreComensal,
+            quantity: 1
           },
           {
             reservation_id: id,
             menu_item_id: entradaSeleccionada,
+            guest_name: nombreComensal,
+            quantity: 1
           }
         ]);
 
@@ -110,24 +117,40 @@ function ConfirmacionContenido() {
       <main style={{ maxWidth: '450px', margin: '6rem auto', padding: '2.5rem', textAlign: 'center', fontFamily: 'sans-serif', background: '#fff', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}>
         <h2 style={{ color: '#2e7d32', marginBottom: '1rem' }}>¡Todo Listo!</h2>
         <p style={{ color: '#444', lineHeight: '1.6' }}>
-          Hemos confirmado tu asistencia y guardado tus elecciones de menú. ¡Te esperamos en <strong>{reserva?.restaurants?.name}</strong>!
+          Hemos confirmado tu asistencia, <strong>{nombreComensal}</strong>, y guardado tus elecciones de menú. ¡Te esperamos en <strong>{reserva?.restaurants?.name}</strong>!
         </p>
       </main>
     );
   }
 
-  // Filtrar categorías si las tienes definidas, o mostrar todos los ítems separando por tipo
-  const bebidas = menuItems.filter(item => item.category?.toLowerCase().includes('bebida') || item.type?.toLowerCase().includes('drink') || true); // Ajusta el filtro según los campos de tu tabla menu_items
+  // Filtrar categorías si las tienes definidas, o mostrar todos los ítems
+  const bebidas = menuItems.filter(item => item.category?.toLowerCase().includes('bebida') || item.type?.toLowerCase().includes('drink') || true);
   const entradas = menuItems.filter(item => item.category?.toLowerCase().includes('entrada') || item.type?.toLowerCase().includes('starter') || true);
 
   return (
     <main style={{ maxWidth: '550px', margin: '3rem auto', padding: '2.5rem', fontFamily: 'sans-serif', background: '#fff', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}>
       <h2 style={{ marginBottom: '0.5rem', textAlign: 'center' }}>Confirma tu Asistencia</h2>
       <p style={{ color: '#666', textAlign: 'center', marginBottom: '2rem', fontSize: '0.95rem' }}>
-        Hola <strong>{reserva?.organizer_name}</strong>, por favor elige tus opciones para la reserva en <strong>{reserva?.restaurants?.name}</strong>.
+        Estás respondiendo a la reserva a nombre de <strong>{reserva?.organizer_name}</strong> en <strong>{reserva?.restaurants?.name}</strong>.
       </p>
 
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+        
+        {/* Nuevo campo para el nombre del comensal */}
+        <div>
+          <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '0.5rem', color: '#333' }}>
+            Tu Nombre y Apellido:
+          </label>
+          <input
+            type="text"
+            value={nombreComensal}
+            onChange={(e) => setNombreComensal(e.target.value)}
+            required
+            placeholder="Ej: Juan Pérez"
+            style={{ width: '100%', padding: '0.75rem', borderRadius: '6px', border: '1px solid #ccc', fontSize: '1rem', boxSizing: 'border-box' }}
+          />
+        </div>
+
         <div>
           <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '0.5rem', color: '#333' }}>
             Elige tu Bebida:
@@ -136,7 +159,7 @@ function ConfirmacionContenido() {
             value={bebidaSeleccionada}
             onChange={(e) => setBebidaSeleccionada(e.target.value)}
             required
-            style={{ width: '100%', padding: '0.75rem', borderRadius: '6px', border: '1px solid #ccc', fontSize: '1rem', background: '#fff' }}
+            style={{ width: '100%', padding: '0.75rem', borderRadius: '6px', border: '1px solid #ccc', fontSize: '1rem', background: '#fff', boxSizing: 'border-box' }}
           >
             <option value="">-- Selecciona una bebida --</option>
             {menuItems.map((item) => (
@@ -155,7 +178,7 @@ function ConfirmacionContenido() {
             value={entradaSeleccionada}
             onChange={(e) => setEntradaSeleccionada(e.target.value)}
             required
-            style={{ width: '100%', padding: '0.75rem', borderRadius: '6px', border: '1px solid #ccc', fontSize: '1rem', background: '#fff' }}
+            style={{ width: '100%', padding: '0.75rem', borderRadius: '6px', border: '1px solid #ccc', fontSize: '1rem', background: '#fff', boxSizing: 'border-box' }}
           >
             <option value="">-- Selecciona una entrada --</option>
             {menuItems.map((item) => (
@@ -178,7 +201,9 @@ function ConfirmacionContenido() {
             fontWeight: 'bold',
             cursor: 'pointer',
             marginTop: '1rem',
-            transition: 'background 0.2s'
+            transition: 'background 0.2s',
+            width: '100%',
+            boxSizing: 'border-box'
           }}
         >
           Confirmar Asistencia y Menú
@@ -195,3 +220,4 @@ export default function ConfirmarReservaPage() {
     </Suspense>
   );
 }
+
