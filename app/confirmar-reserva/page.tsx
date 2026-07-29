@@ -11,7 +11,9 @@ function ConfirmacionContenido() {
   const [reserva, setReserva] = useState<any>(null);
   const [menuItems, setMenuItems] = useState<any[]>([]);
   
+  // Mantenemos tu estado de nombreComensal
   const [nombreComensal, setNombreComensal] = useState<string>('');
+  
   const [bebidaSeleccionada, setBebidaSeleccionada] = useState<string>('');
   const [entradaSeleccionada, setEntradaSeleccionada] = useState<string>('');
   
@@ -35,8 +37,8 @@ function ConfirmacionContenido() {
 
         if (resError || !resData) throw new Error('No se encontró la reserva.');
         setReserva(resData);
-        
-        // Asignamos automáticamente el nombre que viene de la reserva al input editable
+
+        // AQUÍ ESTÁ LA CLAVE: Guardamos el nombre en tu estado para que tenga valor
         if (resData.organizer_name) {
           setNombreComensal(resData.organizer_name);
         }
@@ -61,8 +63,8 @@ function ConfirmacionContenido() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!nombreComensal.trim() || !bebidaSeleccionada || !entradaSeleccionada) {
-      alert('Por favor, verifica tu nombre y selecciona una bebida y una entrada.');
+    if (!bebidaSeleccionada || !entradaSeleccionada) {
+      alert('Por favor, selecciona una bebida y una entrada.');
       return;
     }
 
@@ -74,20 +76,20 @@ function ConfirmacionContenido() {
 
       if (updateError) throw updateError;
 
-      // Enviamos explícitamente el guest_name obtenido del estado vinculado al input
+      // Aquí usamos tu variable 'nombreComensal' que ahora sí tiene el nombre cargado
       const { error: preorderError } = await supabase
         .from('preorders')
         .insert([
           {
             reservation_id: id,
             menu_item_id: bebidaSeleccionada,
-            guest_name: nombreComensal,
+            guest_name: nombreComensal || 'Invitado',
             quantity: 1
           },
           {
             reservation_id: id,
             menu_item_id: entradaSeleccionada,
-            guest_name: nombreComensal,
+            guest_name: nombreComensal || 'Invitado',
             quantity: 1
           }
         ]);
@@ -128,26 +130,12 @@ function ConfirmacionContenido() {
     <main style={{ maxWidth: '550px', margin: '3rem auto', padding: '2.5rem', fontFamily: 'sans-serif', background: '#fff', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}>
       <h2 style={{ marginBottom: '0.5rem', textAlign: 'center' }}>Confirma tu Asistencia</h2>
       
-      <p style={{ color: '#666', textAlign: 'center', marginBottom: '2rem', fontSize: '0.95rem' }}>
-        Estás respondiendo a la reserva en <strong>{reserva?.restaurants?.name}</strong>.
+      {/* Saludo superior usando tu estado nombreComensal */}
+      <p style={{ color: '#555', textAlign: 'center', marginBottom: '2rem', fontSize: '1.05rem' }}>
+        Hola, <strong style={{ color: '#000' }}>{nombreComensal || 'Invitado'}</strong>. Elige tus opciones para la reserva en <strong>{reserva?.restaurants?.name}</strong>.
       </p>
 
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-        
-        {/* Campo visible con el nombre cargado automáticamente desde la reserva */}
-        <div>
-          <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '0.5rem', color: '#333' }}>
-            Nombre del Comensal:
-          </label>
-          <input
-            type="text"
-            value={nombreComensal}
-            onChange={(e) => setNombreComensal(e.target.value)}
-            required
-            style={{ width: '100%', padding: '0.75rem', borderRadius: '6px', border: '1px solid #ccc', fontSize: '1rem', background: '#f9f9f9', boxSizing: 'border-box' }}
-          />
-        </div>
-
         <div>
           <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '0.5rem', color: '#333' }}>
             Elige tu Bebida:
