@@ -11,12 +11,11 @@ function ConfirmacionContenido() {
   const [reserva, setReserva] = useState<any>(null);
   const [menuItems, setMenuItems] = useState<any[]>([]);
   
-  // Nuevos estados para capturar la selección y el nombre
   const [nombreComensal, setNombreComensal] = useState<string>('');
   const [bebidaSeleccionada, setBebidaSeleccionada] = useState<string>('');
   const [entradaSeleccionada, setEntradaSeleccionada] = useState<string>('');
   
-  const [estado, setEstado] = useState<string>('cargando'); // cargando, pendiente_eleccion, confirmado, error, exito
+  const [estado, setEstado] = useState<string>('cargando');
   const [mensajeError, setMensajeError] = useState<string>('');
 
   useEffect(() => {
@@ -28,7 +27,6 @@ function ConfirmacionContenido() {
 
     async function cargarDatos() {
       try {
-        // 1. Obtener datos de la reserva y el restaurante asociado
         const { data: resData, error: resError } = await supabase
           .from('reservations')
           .select('*, restaurants(name)')
@@ -38,7 +36,6 @@ function ConfirmacionContenido() {
         if (resError || !resData) throw new Error('No se encontró la reserva.');
         setReserva(resData);
 
-        // 2. Obtener los ítems del menú del restaurante correspondiente
         const { data: menuData, error: menuError } = await supabase
           .from('menu_items')
           .select('*')
@@ -65,7 +62,6 @@ function ConfirmacionContenido() {
     }
 
     try {
-      // 3. Actualizar estado de la reserva a 'confirmed' (opcional, dependiendo de si un invitado confirma toda la reserva)
       const { error: updateError } = await supabase
         .from('reservations')
         .update({ status: 'confirmed' })
@@ -73,7 +69,6 @@ function ConfirmacionContenido() {
 
       if (updateError) throw updateError;
 
-      // 4. Guardar la preventa (preorder) en la base de datos, INCLUYENDO el guest_name y una cantidad por defecto
       const { error: preorderError } = await supabase
         .from('preorders')
         .insert([
@@ -123,10 +118,6 @@ function ConfirmacionContenido() {
     );
   }
 
-  // Filtrar categorías si las tienes definidas, o mostrar todos los ítems
-  const bebidas = menuItems.filter(item => item.category?.toLowerCase().includes('bebida') || item.type?.toLowerCase().includes('drink') || true);
-  const entradas = menuItems.filter(item => item.category?.toLowerCase().includes('entrada') || item.type?.toLowerCase().includes('starter') || true);
-
   return (
     <main style={{ maxWidth: '550px', margin: '3rem auto', padding: '2.5rem', fontFamily: 'sans-serif', background: '#fff', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}>
       <h2 style={{ marginBottom: '0.5rem', textAlign: 'center' }}>Confirma tu Asistencia</h2>
@@ -135,8 +126,6 @@ function ConfirmacionContenido() {
       </p>
 
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-        
-        {/* Nuevo campo para el nombre del comensal */}
         <div>
           <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '0.5rem', color: '#333' }}>
             Tu Nombre y Apellido:
@@ -220,4 +209,3 @@ export default function ConfirmarReservaPage() {
     </Suspense>
   );
 }
-
